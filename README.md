@@ -17,13 +17,28 @@ colcon build --packages-select uuv_leak_detection
 source install/setup.bash
 
 
-## Ejecucion
-Se requieren dos terminales con el entrono activado
+## Ejecución
+Se requieren dos terminales. En CADA UNA debes cargar el entorno antes de ejecutar:
 
-Terminal 1 (Sensor):
-'ros2 run uuv_leak_detection leak_sensor_node'
+**Terminal 1 (Sensor):**
+```
+cd ~/ros2_ws
+source install/setup.bash
+ros2 run uuv_leak_detection leak_sensor_node
+```
 
-Terminal 2 (Detector):
-'ros2 run uuv_leak_detection water_leak_detector'
+**Terminal 2 (Detector):**
+```
+cd ~/ros2_ws
+source install/setup.bash
+ros2 run uuv_leak_detection water_leak_detector
+```
 
+## Verificación de Tópicos (Debugging)
+Para inspeccionar la información que viaja entre los nodos en tiempo real, puedes abrir una tercera terminal y sintonizar los tópicos:
 
+Para ver los datos crudos del sensor (True/False):
+`ros2 topic echo /uuv/leak_status`
+
+Para ver las alertas procesadas por el detector (String):
+`ros2 topic echo /uuv/enclosure_alarm`
