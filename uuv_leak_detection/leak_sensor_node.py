@@ -1,22 +1,19 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Bool
+from std_msgs.msg import Float32
 
 class LeakSensorNode(Node):
 	def __init__(self):
 		super().__init__('leak_sensor_node')
-		#Publicador que enviara el estado en el topico /uuv/leak_status
-		self.publisher_ = self.create_publisher(Bool, '/uuv/leak_status', 10)
-		# Evalua el estado del sensor cada 1.0 seg
+		self.publisher_ = self.create_publisher(Float32, '/uuv/leak_status', 10)
 		self.timer = self.create_timer(1.0, self.check_leak_sensor)
 		self.get_logger().info('Nodo del Sensor de Fugas inicializado correctamente')
 
 	def check_leak_sensor(self):
-		msg = Bool()
-		# Simulacion: False = Compartimento seco | True = Fuga detectada
-		msg.data = False
+		msg = Float32()
+		#Valor por defecto, se sobreescribira en las pruebas
+		msg.data = 20.0
 		self.publisher_.publish(msg)
-		self.get_logger().info(f'Estado publicado en /uuv/leak_status: {"ALERTA DE FUGA" if msg.data else "Seco"}')
 
 def main(args=None):
 	rclpy.init(args=args)

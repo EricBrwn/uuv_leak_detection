@@ -1,33 +1,52 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Float32, String
 
 class WaterLeakDetector(Node):
 	def __init__(self):
 		super().__init__('water_leak_detector')
 
+		#Variable de memoria
+		self.fugaDetectada = False
+		self.contadorPeligro = 0
+		self.lecturasCriticas = 3
+
 		#Suscribirse al topico del sensor que ya existe
 		self.subscription = self.create_subscription(
-			Bool, 
+			Float32, 
 			'/uuv/leak_status',
 			self.sensor_callback,
 			10)
 
 		#Creacion de Nuevo topico para publicar el resultado procesado
 		self.publisher_ = self.create_publisher(String, '/uuv/enclosure_alarm', 10)
-		self.get_logger().info('Detector central activado. Monitoreando el enclosure...')
+		self.get_logger().info('Detector activado. Histeresis con Filtro. Monitoreando el enclosure...')
 
 	def sensor_callback(self, msg):
-
-		# Recibe la medicion, determina el estado y lo publica
+		humedad = msg.data
 		resultado = String()
 
-		if msg.data == True:
-			resultado.data = "ALERTA CRITICA, INUNDACION EN EL ENCLOSURE"
-			self.get_logger().error('FUGA CONFIRMADA, ACTIVANDO ALARMA')
+		if humedad >= 60.0:
+			self.contadorPeligro += 1
+		elif humedad <= 40.0:
+			self.contadorPeligro = 0
+
+		
+		if not self.fugaDetectada and self.contadorPeligro >= self.lecturasCriticas:
+			#Supero el limite superior, activa alarma
+			self.fugaDetectada = True
+			self.get_logger().error(f"FUGA CONFIRMADA - Humedad: {humedad}% - Activando alarma")
+
+		elif self.fugaDetectada and humedad <= 40.0:
+			#Bajo del limite inferior, desactiva alarma
+			self.fugaDetectada = False
+			self.get_logger().info(f"Nivel seguro. Humedad: {humedad}% - Sistemas nominales")
+
+		#Publicar el estado
+		if self.fugaDetectada:
+			resultado.data = f"ALERTA CRITICA, INUNDACION EN ENCLOSURE! Humedad: {humedad}%"
 		else:
-			resultado.data = "Enclosure seguro y presurizado"
-			self.get_logger().info('Sistemas nominales')
+			resultado.data = f"Enclosure seguro y presurizado - Humedad: {humedad}%"
 
 		self.publisher_.publish(resultado)
 
